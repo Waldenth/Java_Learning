@@ -1,2 +1,2 @@
 del *.class
-del *.java~
+del *.java~ 
