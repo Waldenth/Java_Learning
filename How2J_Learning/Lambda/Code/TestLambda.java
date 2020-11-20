@@ -43,6 +43,9 @@ public class TestLambda {
         System.out.println("另一种写法");
         filter(heros,TestLambda::testHero);
 
+        System.out.println("引用容器中的对象方法");
+        filter(heros,h->h.matched());
+
 
     }
   

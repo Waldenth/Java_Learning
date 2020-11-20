@@ -40,6 +40,14 @@ public class Hero implements Comparable<Hero>{
         return "Hero [name=" + name + ", hp=" + hp + ", damage=" + damage + "]\r\n";
     }
 }
+
+```
+
+```java
+public interface HeroChecker {
+    public boolean test(Hero h);
+}
+
 ```
 
 ```java
@@ -210,7 +218,12 @@ Collections.sort(heros,(h1,h2)->h1.hp>=h2.hp?1:-1)
 ```java
 Collections.sort(heros,(h1,h2)->h1.hp>=h2.hp?1:-1);
 //
-
+Collections.sort(heros,(h1,h2)->{
+    if(h1.hp>=h2.hp)
+        return 1;
+  	else
+        return -1;
+})
 ```
 
 λ表达式就是接口里的唯一未实现方法，语法是这样子的，*（参数列表）-> 函数体*。然后只有一的时候可以省略，一个参数可以省略小括号，一句函数体可以省略大括号，哦，对了 一句函数体的话，return也可以省略。所以只有一的时候省略。
@@ -218,4 +231,287 @@ Collections.sort(heros,(h1,h2)->h1.hp>=h2.hp?1:-1);
 λ表达式描述的是接口里的唯一未实现方法，那它怎么知道是接口的哪一个方法呢。实现类或者匿名内部类都可以通过方法名，参数类型之类的找出，而λ表达式又没方法名，参数类型也是没有的，这按传统的方法就没辙了。所以java8给了一个简单粗暴的办法，就找接口里面唯一没有实现的方法。所以如果接口里面有多个未实现方法，那就会编译报错了。
 
 ### Lambda方法引用
+
+#### 引用静态方法
+
+首先为`TestLambda`添加一个静态方法：
+
+```java
+public static boolean testHero(Hero h) {
+   return h.hp>100 && h.damage<50;
+}
+```
+
+Lambda表达式：
+
+```java
+filter(heros, h->h.hp>100 && h.damage<50);
+```
+
+在Lambda表达式中调用这个静态方法：
+
+```java
+filter(heros, h -> TestLambda.testHero(h) );
+```
+
+调用静态方法还可以改写为：
+
+```java
+filter(heros, TestLambda::testHero);
+```
+
+#### 引用对象方法
+
+与引用静态方法很类似，只是传递方法的时候，需要一个对象的存在
+
+```java
+TestLambda testLambda = new TestLambda();
+filter(heros, testLambda::testHero);
+```
+
+#### 引用容器中的对象方法
+
+首先为Hero添加一个方法
+
+```java
+public boolean matched(){
+   return this.hp>100 && this.damage<50;
+}
+```
+
+使用Lambda表达式
+
+```java
+filter(heros,h-> h.hp>100 && h.damage<50 );
+```
+
+在Lambda表达式中调用容器中的对象Hero的方法matched
+
+```java
+filter(heros,h-> h.matched() );
+```
+
+matched恰好就是容器中的对象Hero的方法，那就可以进一步改写为
+
+```java
+filter(heros, Hero::matched);
+```
+
+#### 引用构造器
+
+有的接口中的方法会返回一个对象，比如**`java.util.function.Supplier`**提供
+了一个get方法，返回一个对象。
+
+```java
+public interface Supplier<T> {
+   	 T get();
+}
+```
+
+设计一个方法，参数是这个接口
+
+```java
+public static List getList(Supplier<List> s){
+ 	 return s.get();
+}
+```
+
+为了调用这个方法，有3种方式
+第一种匿名类：
+
+```java
+Supplier<List> s = new Supplier<List>() {
+	public List get() {
+		return new ArrayList();
+	}
+};
+List list1 = getList(s);
+```
+
+第二种：Lambda表达式
+
+```java 
+List list2 = getList(()->new ArrayList());
+```
+
+第三种：引用构造器
+
+`ArrayList::new`表示的是当前的`getList(arg==Supplier<List> s)`的`S`传入参数是一个
+
+实现的接口`get()`方法是返回一个`ArrayList`的匿名类
+
+```java
+List list3 = getList(ArrayList::new);
+```
+
+### Lambda 聚合操作
+
+遍历数据的传统方式就是使用for循环，然后条件判断，最后打印出满足条件的数据
+
+```java
+for (Hero h : heros) {
+   if (h.hp > 100 && h.damage < 50)
+       System.out.println(h.name);
+}
+```
+
+使用聚合操作方式，**画风**就发生了变化：
+
+```java
+heros
+	.stream()
+	.filter(h -> h.hp > 100 && h.damage < 50)
+	.forEach(h -> System.out.println(h.name));
+```
+
+#### Stream和管道
+
+```java
+heros
+	.stream()
+	.filter(h -> h.hp > 100 && h.damage < 50)
+	.forEach(h -> System.out.println(h.name));
+```
+
+要了解聚合操作，首先要建立**Stream**和**管道**的概念
+**Stream** 和Collection结构化的数据不一样，Stream是一系列的元素，就像是生产线上的罐头一样，一串串的出来。
+**管道**指的是一系列的聚合操作。
+
+管道又分3个部分
+**管道源**：在这个例子里，源是一个List
+**中间操作**： 每个中间操作，又会返回一个Stream，比如.filter()又返回一个Stream, 中间操作是“懒”操作，并不会真正进行遍历。
+**结束操作**：当这个操作执行后，流就被使用“光”了，无法再被操作。所以这必定是流的最后一个操作。 结束操作不会返回Stream，但是会返回int、float、String、 Collection或者像`forEach`，什么都不返回, 结束操作才进行真正的遍历行为，在遍历的时候，才会去进行中间操作的相关判断
+
+**注：** 这个Stream和I/O章节的`InputStream,OutputStream`是不一样的概念。
+
+#### 管道源
+
+把Collection切换成管道源很简单，调用stream()就行了。
+
+ ```java
+heros.stream()
+ ```
+
+但是数组却没有stream()方法，需要使用
+
+ ```java
+Arrays.stream(hs)
+ ```
+
+ 或者
+
+`Stream.of(hs)`
+
+```java
+import charactor.Hero;
+ 
+public class TestAggregate {
+ 
+    public static void main(String[] args) {
+        Random r = new Random();
+        List<Hero> heros = new ArrayList<Hero>();
+        for (int i = 0; i < 5; i++) {
+            heros.add(new Hero("hero " + i, r.nextInt(1000), r.nextInt(100)));
+        }
+        //管道源是集合
+        heros
+        .stream()
+        .forEach(h->System.out.println(h.name));
+         
+        //管道源是数组
+        Hero hs[] = heros.toArray(new Hero[heros.size()]);
+        Arrays.stream(hs)
+        .forEach(h->System.out.println(h.name));
+    }
+}
+```
+
+#### 中间操作
+
+每个中间操作，又会返回一个Stream，比如.filter()又返回一个Stream, 中间操作是“懒”操作，并不会真正进行遍历。
+中间操作比较多，主要分两类
+对元素进行筛选 和 转换为其他形式的流
+**对元素进行筛选：**
+filter 匹配
+distinct 去除重复(根据equals判断)
+sorted 自然排序
+sorted(Comparator<T>) 指定排序
+limit 保留
+skip 忽略
+**转换为其他形式的流**
+`mapToDouble` 转换为`double`的流
+`map `转换为任意类型的流
+
+```java
+import charactor.Hero;
+  
+public class TestAggregate {
+  
+    public static void main(String[] args) {
+        Random r = new Random();
+        List<Hero> heros = new ArrayList<Hero>();
+        for (int i = 0; i < 5; i++) {
+            heros.add(new Hero("hero " + i, r.nextInt(1000), r.nextInt(100)));
+        }
+        //制造一个重复数据
+        heros.add(heros.get(0));
+        System.out.println("初始化集合后的数据 (最后一个数据重复)：");
+        System.out.println(heros);
+        System.out.println("满足条件hp>100&&damage<50的数据");
+          
+        heros
+            .stream()
+            .filter(h->h.hp>100&&h.damage<50)
+            .forEach(h->System.out.print(h));
+          
+        System.out.println("去除重复的数据，去除标准是看equals");
+        heros
+            .stream()
+            .distinct()
+            .forEach(h->System.out.print(h));
+        System.out.println("按照血量排序");
+        heros
+            .stream()
+            .sorted((h1,h2)->h1.hp>=h2.hp?1:-1)
+            .forEach(h->System.out.print(h));
+          
+        System.out.println("保留3个");
+        heros
+            .stream()
+            .limit(3)
+            .forEach(h->System.out.print(h));
+          
+        System.out.println("忽略前3个");
+        heros
+            .stream()
+            .skip(3) //忽略前3个
+            .forEach(h->System.out.print(h));
+          
+        System.out.println("转换为double的Stream");
+        heros
+            .stream()
+            .mapToDouble(Hero::getHp)
+            .forEach(h->System.out.println(h));
+          
+        System.out.println("转换任意类型的Stream");
+        heros
+            .stream()
+            .map((h)-> h.name + " - " + h.hp + " - " + h.damage)
+            .forEach(h->System.out.println(h));
+          
+    }
+}
+```
+
+#### 结束操作
+
+当进行结束操作后，流就被使用“光”了，无法再被操作。所以这必定是流的最后一个操作。 结束操作不会返回Stream，但是会返回int、float、String、 Collection或者像forEach，什么都不返回,。
+结束操作才真正进行遍历行为，前面的中间操作也在这个时候，才真正的执行。
+常见结束操作如下：
+**forEach()** 遍历每个元素
+**toArray()** 转换为数组
+**min(Comparator<T>)** 取最小的元素
+**max(Comparator<T>)** 取最大的元素
+**count()** 总数
+**`findFirst()`** 第一个元素
 

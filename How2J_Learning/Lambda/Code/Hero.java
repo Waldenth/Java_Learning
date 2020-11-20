@@ -23,4 +23,7 @@ public class Hero implements Comparable<Hero>{
     public String toString() {
         return "Hero [name=" + name + ", hp=" + hp + ", damage=" + damage + "]\r\n";
     }
+    public boolean matched(){
+        return this.hp>100&&this.damage<50;
+    }
 }
