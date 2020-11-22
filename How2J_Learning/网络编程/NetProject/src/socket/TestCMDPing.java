@@ -8,7 +8,7 @@ import java.nio.charset.Charset;
 public class TestCMDPing {
     public static void main(String[] args) throws IOException {
 
-        Process p = Runtime.getRuntime().exec("ping " + "202.108.22.5");
+        Process p = Runtime.getRuntime().exec("ping " + "202.108.22.5"); //百度公网IP
         BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream(), Charset.forName("GBK")));
         String line = null;
         StringBuilder sb = new StringBuilder();
