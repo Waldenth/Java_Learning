@@ -1,0 +1,2 @@
+class=applyReflection.Service1
+method=doService1
