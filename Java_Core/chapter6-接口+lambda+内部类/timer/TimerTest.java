@@ -21,7 +21,7 @@ public class TimerTest {
 
 class TimePrinter implements ActionListener{
     public void actionPerformed(ActionEvent event){
-        System.out.println("At thr tone , the time is "+ Instant.ofEpochMilli(event.getWhen()));
+        System.out.println("At the tone , the time is "+ Instant.ofEpochMilli(event.getWhen()));
         Toolkit.getDefaultToolkit().beep();
     }
 }
