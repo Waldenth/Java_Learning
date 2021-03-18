@@ -36,6 +36,7 @@ public class LoggingImageViewer {
 
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+            frame.setLocationRelativeTo(null);
 
             Logger.getLogger("com.horstmann.corejava").fine("Showing frame");
             frame.setVisible(true);
@@ -121,6 +122,9 @@ class WindowHandler extends StreamHandler{
         frame.setSize(200,200);
         frame.add(new JScrollPane(output));
         frame.setFocusableWindowState(false);
+
+        frame.setLocationRelativeTo(null);
+
         frame.setVisible(true);
 
         setOutputStream(new OutputStream(){
