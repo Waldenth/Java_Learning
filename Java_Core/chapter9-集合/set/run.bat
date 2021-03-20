@@ -1,0 +1,1 @@
+java SetTest.java <alice.txt
