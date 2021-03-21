@@ -7,4 +7,4 @@
 
 
 
-Test GPG
+Test GPG.
